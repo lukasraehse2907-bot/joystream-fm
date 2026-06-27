@@ -5,7 +5,6 @@ const audio = document.getElementById('radioStream');
 const playBtn = document.getElementById('playBtn');
 const volumeControl = document.getElementById('volumeControl');
 
-// Setzt die Startlautstärke auf 50%
 if (audio) audio.volume = 0.5;
 
 function togglePlay() {
@@ -23,7 +22,6 @@ function togglePlay() {
     }
 }
 
-// Event-Listener für den Lautstärkeregler
 if (volumeControl && audio) {
     volumeControl.addEventListener('input', (e) => {
         audio.volume = e.target.value;
@@ -31,7 +29,7 @@ if (volumeControl && audio) {
 }
 
 // ==========================================
-// 2. LIVE-SONG AUS ICECAST & ITUNES-COVER
+// 2. LIVE-SONG & MODERATOR AUS ICECAST
 // ==========================================
 async function updateStickySong() {
     try {
@@ -41,8 +39,9 @@ async function updateStickySong() {
         const data = await res.json();
         let rawArtist = "";
         let rawTitle = "";
+        let streamerName = "";
 
-        // Icecast JSON-Struktur gezielt nach artist und title durchsuchen
+        // Icecast JSON-Struktur durchsuchen
         if (data && data.icestats && data.icestats.source) {
             const source = data.icestats.source;
             
@@ -51,24 +50,34 @@ async function updateStickySong() {
                     if (s.title || s.artist) {
                         rawArtist = s.artist || "";
                         rawTitle = s.title || "";
+                        // Versucht den DJ-Namen aus der Beschreibung zu lesen
+                        streamerName = s.server_description || s.server_name || "";
                         break;
                     }
                 }
             } else {
                 rawArtist = source.artist || "";
                 rawTitle = source.title || "";
+                streamerName = source.server_description || source.server_name || "";
             }
         }
 
+        // Standard-Werte für Songs setzen
         let displayArtist = rawArtist.trim();
         let displayTitle = rawTitle.trim();
-        let coverSrc = "transparent-logo.png"; // Fallback-Bild
+        let coverSrc = "transparent-logo.png";
 
         if (!displayArtist && displayTitle) displayArtist = "Joy FM";
         if (!displayTitle && displayArtist) displayTitle = "Dein Live Radio";
         if (!displayArtist && !displayTitle) {
             displayArtist = "Joy FM";
             displayTitle = "Dein Live Radio";
+        }
+
+        // Moderator-Namen filtern (Falls Standard-Werte von Icecast drinstehen, ersetzen)
+        streamerName = streamerName.trim();
+        if (!streamerName || streamerName.toLowerCase().includes("unspecified") || streamerName.toLowerCase().includes("mystream")) {
+            streamerName = "Joy FM Automation";
         }
 
         // Cover-Bild live über die iTunes API suchen
@@ -85,18 +94,19 @@ async function updateStickySong() {
             }
         }
 
-        // HTML in der Leiste aktualisieren
+        // HTML-Elemente auf der Seite beschreiben
+        document.getElementById("onAirStatus").textContent = `On Air: ${streamerName}`;
         document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">${displayArtist}</span> - ${displayTitle}`;
         document.getElementById("songCover").src = coverSrc;
 
     } catch (error) {
         console.log("Fehler beim Icecast- oder Cover-Auslesen:", error);
+        document.getElementById("onAirStatus").textContent = "On Air: Joy FM";
         document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">Joy FM</span> - Fühle den Sound`;
         document.getElementById("songCover").src = "transparent-logo.png";
     }
 }
 
-// Song alle 15 Sekunden automatisch aktualisieren
 updateStickySong();
 setInterval(updateStickySong, 15000);
 

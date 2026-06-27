@@ -12,7 +12,7 @@
 
     <header class="main-header" style="display: flex; align-items: center; justify-content: space-between;">
         <div class="logo">
-            <img src="transparent-logo.jpg" alt="Joy FM Logo" style="height: 50px; width: auto; object-fit: contain; vertical-align: middle;">
+            <img src="transparent-logo.png" alt="Joy FM Logo" style="height: 50px; width: auto; object-fit: contain; vertical-align: middle;">
         </div>
         <nav class="nav-links">
             <a href="#about">Über uns</a>
@@ -106,7 +106,7 @@
         </div>
 
         <audio id="radioStream">
-            <source src="https://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
+            <source src="ttps://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
         </audio>
 
         <div>
@@ -135,23 +135,21 @@
         }
     }
 
-    // Korrigierte Song-Anzeige Logik (Fragt nun die Tracklist an)
+    // Song-Anzeige Logik (Fragt nun die Tracklist an)
     async function updateStickySong() {
         try {
             const res = await fetch("https://panel.joystream-fm.de/public/tracklist.php", { headers: { "Accept":"application/json" }});
             const data = await res.json();
             
-            // Überprüfung verschiedener gängiger JSON-Formate für Radiosongs
             if (data && data.now_playing) {
                 document.getElementById("currentSong").textContent = data.now_playing;
             } else if (data && data.tracks && data.tracks.length > 0) {
                 document.getElementById("currentSong").textContent = data.tracks[0].title;
             } else {
-                document.getElementById("currentSong").textContent = "Joy FM – Am Einschalten!";
+                document.getElementById("currentSong").textContent = "Joy FM – Musik läuft!";
             }
         } catch (error) {
-            // Falls CORS blockiert, bleibt dieser Standard-Text stehen
-            document.getElementById("currentSong").textContent = "Joy FM – Dein Lieblingssound";
+            document.getElementById("currentSong").textContent = "Joy FM – Fühle den Sound";
         }
     }
 

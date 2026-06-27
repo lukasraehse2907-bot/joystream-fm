@@ -1,8 +1,12 @@
 // ==========================================
-// 1. PLAYER-LOGIK (PLAY / PAUSE)
+// 1. PLAYER-LOGIK (PLAY / PAUSE & LAUTSTÄRKE)
 // ==========================================
 const audio = document.getElementById('radioStream');
 const playBtn = document.getElementById('playBtn');
+const volumeControl = document.getElementById('volumeControl');
+
+// Setzt die Startlautstärke auf 50%
+if (audio) audio.volume = 0.5;
 
 function togglePlay() {
     if (!audio) return;
@@ -19,6 +23,13 @@ function togglePlay() {
     }
 }
 
+// Event-Listener für den Lautstärkeregler
+if (volumeControl && audio) {
+    volumeControl.addEventListener('input', (e) => {
+        audio.volume = e.target.value;
+    });
+}
+
 // ==========================================
 // 2. LIVE-SONG AUS ICECAST & ITUNES-COVER
 // ==========================================
@@ -31,12 +42,11 @@ async function updateStickySong() {
         let rawArtist = "";
         let rawTitle = "";
 
-        // 1. Icecast JSON-Struktur gezielt nach artist und title durchsuchen
+        // Icecast JSON-Struktur gezielt nach artist und title durchsuchen
         if (data && data.icestats && data.icestats.source) {
             const source = data.icestats.source;
             
             if (Array.isArray(source)) {
-                // Falls es mehrere Mountpoints gibt, nehmen wir den ersten mit Daten
                 for (let s of source) {
                     if (s.title || s.artist) {
                         rawArtist = s.artist || "";
@@ -50,12 +60,10 @@ async function updateStickySong() {
             }
         }
 
-        // Standard-Werte setzen, falls der Server mal leer ist
         let displayArtist = rawArtist.trim();
         let displayTitle = rawTitle.trim();
         let coverSrc = "transparent-logo.png"; // Fallback-Bild
 
-        // Wenn kein Künstler geliefert wird, aber ein Titel da ist (und umgekehrt)
         if (!displayArtist && displayTitle) displayArtist = "Joy FM";
         if (!displayTitle && displayArtist) displayTitle = "Dein Live Radio";
         if (!displayArtist && !displayTitle) {
@@ -63,14 +71,13 @@ async function updateStickySong() {
             displayTitle = "Dein Live Radio";
         }
 
-        // 2. Cover-Bild live über die iTunes API suchen (nur wenn wir echte Daten haben)
+        // Cover-Bild live über die iTunes API suchen
         if (rawTitle || rawArtist) {
             try {
                 const searchQuery = `${rawArtist} ${rawTitle}`.trim();
                 const iTunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&media=music&limit=1`);
                 const iTunesData = await iTunesRes.json();
                 if (iTunesData.results && iTunesData.results.length > 0) {
-                    // Holt das Cover und macht es scharf (600x600)
                     coverSrc = iTunesData.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
                 }
             } catch (coverError) {
@@ -78,7 +85,7 @@ async function updateStickySong() {
             }
         }
 
-        // 3. HTML in der Leiste aktualisieren
+        // HTML in der Leiste aktualisieren
         document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">${displayArtist}</span> - ${displayTitle}`;
         document.getElementById("songCover").src = coverSrc;
 

@@ -99,14 +99,18 @@
                 <div style="font-weight: bold; color: #fff; font-size: 1.1rem; line-height: 1.1;">Joy <span style="color: #ff0055;">FM</span></div>
                 <div style="font-size: 0.75rem; color: #ff0055; font-weight: bold; margin-top: 2px; letter-spacing: 1px;">LIVE</div>
             </div>
-            <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 20px; overflow: hidden; white-space: nowrap;">
-                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase;">Aktueller Song:</div>
-                <div id="currentSong" style="font-size: 0.95rem; color: #fff; font-weight: 500; text-overflow: ellipsis; overflow: hidden;">Joy FM – Dein Live Radio</div>
+            
+            <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 20px; display: flex; align-items: center; gap: 12px; overflow: hidden; white-space: nowrap;">
+                <img id="songCover" src="transparent-logo.png" alt="Cover" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+                <div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase;">Aktueller Song:</div>
+                    <div id="currentSong" style="font-size: 0.95rem; color: #fff; font-weight: 500; text-overflow: ellipsis; overflow: hidden;">Joy FM – Musik läuft!</div>
+                </div>
             </div>
         </div>
 
         <audio id="radioStream">
-            <source src="ttps://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
+            <source src="https://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
         </audio>
 
         <div>
@@ -135,21 +139,30 @@
         }
     }
 
-    // Song-Anzeige Logik (Fragt nun die Tracklist an)
+    // Song-Anzeige & Cover Logik
     async function updateStickySong() {
         try {
             const res = await fetch("https://panel.joystream-fm.de/public/tracklist.php", { headers: { "Accept":"application/json" }});
             const data = await res.json();
             
+            let title = "Joy FM – Musik läuft!";
+            let coverSrc = "transparent-logo.png"; // Standard-Fallcover
+
             if (data && data.now_playing) {
-                document.getElementById("currentSong").textContent = data.now_playing;
+                title = data.now_playing;
+                if (data.cover) coverSrc = data.cover;
             } else if (data && data.tracks && data.tracks.length > 0) {
-                document.getElementById("currentSong").textContent = data.tracks[0].title;
-            } else {
-                document.getElementById("currentSong").textContent = "Joy FM – Musik läuft!";
+                title = data.tracks[0].title;
+                if (data.tracks[0].cover) coverSrc = data.tracks[0].cover;
             }
+
+            document.getElementById("currentSong").textContent = title;
+            document.getElementById("songCover").src = coverSrc;
+
         } catch (error) {
-            document.getElementById("currentSong").textContent = "Joy FM – Fühle den Sound";
+            // Falls API Fehler wirft oder blockiert wird
+            document.getElementById("currentSong").textContent = "Joy FM – Schalt ein, bring Joy in deinen Tag!";
+            document.getElementById("songCover").src = "transparent-logo.png";
         }
     }
 

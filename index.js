@@ -41,7 +41,6 @@ async function updateStickySong() {
         let rawTitle = "";
         let streamerName = "";
 
-        // Icecast JSON-Struktur durchsuchen
         if (data && data.icestats && data.icestats.source) {
             const source = data.icestats.source;
             
@@ -50,7 +49,6 @@ async function updateStickySong() {
                     if (s.title || s.artist) {
                         rawArtist = s.artist || "";
                         rawTitle = s.title || "";
-                        // Versucht den DJ-Namen aus der Beschreibung zu lesen
                         streamerName = s.server_description || s.server_name || "";
                         break;
                     }
@@ -62,7 +60,6 @@ async function updateStickySong() {
             }
         }
 
-        // Standard-Werte für Songs setzen
         let displayArtist = rawArtist.trim();
         let displayTitle = rawTitle.trim();
         let coverSrc = "transparent-logo.png";
@@ -74,13 +71,19 @@ async function updateStickySong() {
             displayTitle = "Dein Live Radio";
         }
 
-        // Moderator-Namen filtern (Falls Standard-Werte von Icecast drinstehen, ersetzen)
+        // Bereinigung des DJ-Namens
         streamerName = streamerName.trim();
-        if (!streamerName || streamerName.toLowerCase().includes("unspecified") || streamerName.toLowerCase().includes("mystream")) {
+        const lowerName = streamerName.toLowerCase();
+        
+        // Falls der Name nur der Standard-Servername ist, zeigen wir Automation an
+        if (!streamerName || 
+            lowerName.includes("unspecified") || 
+            lowerName.includes("mystream") || 
+            lowerName === "joy stream fm" || 
+            lowerName === "joyfm") {
             streamerName = "Joy FM Automation";
         }
 
-        // Cover-Bild live über die iTunes API suchen
         if (rawTitle || rawArtist) {
             try {
                 const searchQuery = `${rawArtist} ${rawTitle}`.trim();
@@ -94,7 +97,6 @@ async function updateStickySong() {
             }
         }
 
-        // HTML-Elemente auf der Seite beschreiben
         document.getElementById("onAirStatus").textContent = `On Air: ${streamerName}`;
         document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">${displayArtist}</span> - ${displayTitle}`;
         document.getElementById("songCover").src = coverSrc;

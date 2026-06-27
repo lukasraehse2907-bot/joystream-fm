@@ -28,38 +28,49 @@ async function updateStickySong() {
         if (!res.ok) throw new Error("Fehler beim Laden der Songdaten");
         
         const data = await res.json();
+        let rawArtist = "";
         let rawTitle = "";
 
-        // 1. Icecast JSON-Struktur nach dem Text durchsuchen
+        // 1. Icecast JSON-Struktur gezielt nach artist und title durchsuchen
         if (data && data.icestats && data.icestats.source) {
             const source = data.icestats.source;
+            
             if (Array.isArray(source)) {
+                // Falls es mehrere Mountpoints gibt, nehmen wir den ersten mit Daten
                 for (let s of source) {
-                    if (s.title) { rawTitle = s.title; break; }
+                    if (s.title || s.artist) {
+                        rawArtist = s.artist || "";
+                        rawTitle = s.title || "";
+                        break;
+                    }
                 }
-            } else if (source.title) {
-                rawTitle = source.title;
+            } else {
+                rawArtist = source.artist || "";
+                rawTitle = source.title || "";
             }
         }
 
-        let finalDisplay = "Joy FM - Dein Live Radio";
+        // Standard-Werte setzen, falls der Server mal leer ist
+        let displayArtist = rawArtist.trim();
+        let displayTitle = rawTitle.trim();
         let coverSrc = "transparent-logo.png"; // Fallback-Bild
 
-        if (rawTitle && rawTitle.trim() !== "") {
-            // 2. Text prüfen und formatieren
-            if (rawTitle.includes(" - ")) {
-                const parts = rawTitle.split(" - ");
-                finalDisplay = `<span style="color: #ff0055; font-weight: bold;">${parts[0].trim()}</span> - ${parts[1].trim()}`;
-            } else {
-                // Wenn kein Bindestrich da ist, zeigen wir den kompletten Text direkt an
-                finalDisplay = rawTitle.trim();
-            }
+        // Wenn kein Künstler geliefert wird, aber ein Titel da ist (und umgekehrt)
+        if (!displayArtist && displayTitle) displayArtist = "Joy FM";
+        if (!displayTitle && displayArtist) displayTitle = "Dein Live Radio";
+        if (!displayArtist && !displayTitle) {
+            displayArtist = "Joy FM";
+            displayTitle = "Dein Live Radio";
+        }
 
-            // 3. Cover-Bild live über die iTunes API suchen
+        // 2. Cover-Bild live über die iTunes API suchen (nur wenn wir echte Daten haben)
+        if (rawTitle || rawArtist) {
             try {
-                const iTunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(rawTitle)}&media=music&limit=1`);
+                const searchQuery = `${rawArtist} ${rawTitle}`.trim();
+                const iTunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&media=music&limit=1`);
                 const iTunesData = await iTunesRes.json();
                 if (iTunesData.results && iTunesData.results.length > 0) {
+                    // Holt das Cover und macht es scharf (600x600)
                     coverSrc = iTunesData.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
                 }
             } catch (coverError) {
@@ -67,13 +78,13 @@ async function updateStickySong() {
             }
         }
 
-        // 4. HTML in der Leiste aktualisieren
-        document.getElementById("currentSong").innerHTML = finalDisplay;
+        // 3. HTML in der Leiste aktualisieren
+        document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">${displayArtist}</span> - ${displayTitle}`;
         document.getElementById("songCover").src = coverSrc;
 
     } catch (error) {
         console.log("Fehler beim Icecast- oder Cover-Auslesen:", error);
-        document.getElementById("currentSong").textContent = "Joy FM – Fühle den Sound";
+        document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">Joy FM</span> - Fühle den Sound`;
         document.getElementById("songCover").src = "transparent-logo.png";
     }
 }
@@ -134,5 +145,4 @@ async function loadMember(id){
   }
 }
 
-// Team direkt beim Laden initialisieren
 loadTeam();

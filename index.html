@@ -6,8 +6,8 @@
     <title>Joy FM | Dein Live Radio</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Macht das Bild zu deinem eigenen Mauszeiger auf der ganzen Seite */
-        html, body, a, button, select, input {
+        /* Erzwingt das eigene Bild als Mauszeiger auf absolut jedem Element (auch Links & Buttons) */
+        *, html, body, a, button, select, input, textarea, [role="button"] {
             cursor: url('e0116cbf-7668-4768-a670-ba7a114fab14.png') 16 16, auto !important;
         }
         
@@ -29,8 +29,9 @@
             height: 14px;
             border-radius: 50%;
             background: #ff0055;
-            cursor: pointer;
             box-shadow: 0 0 5px rgba(255, 0, 85, 0.5);
+            /* Auch für den Regler-Knopf selbst den Cursor erzwingen */
+            cursor: url('e0116cbf-7668-4768-a670-ba7a114fab14.png') 16 16, auto !important;
         }
     </style>
 </head>

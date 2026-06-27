@@ -42,19 +42,17 @@ async function updateStickySong() {
             }
         }
 
-        // Standard-Werte setzen, falls nichts läuft
-        let displayArtist = "Joy FM";
-        let displayTitle = "Dein Live Radio";
+        let finalDisplay = "Joy FM - Dein Live Radio";
         let coverSrc = "transparent-logo.png"; // Fallback-Bild
 
         if (rawTitle && rawTitle.trim() !== "") {
-            // 2. Text am Bindestrich aufteilen (Künstler - Titel)
+            // 2. Text prüfen und formatieren
             if (rawTitle.includes(" - ")) {
                 const parts = rawTitle.split(" - ");
-                displayArtist = parts[0].trim();
-                displayTitle = parts[1].trim();
+                finalDisplay = `<span style="color: #ff0055; font-weight: bold;">${parts[0].trim()}</span> - ${parts[1].trim()}`;
             } else {
-                displayTitle = rawTitle.trim();
+                // Wenn kein Bindestrich da ist, zeigen wir den kompletten Text direkt an
+                finalDisplay = rawTitle.trim();
             }
 
             // 3. Cover-Bild live über die iTunes API suchen
@@ -62,16 +60,15 @@ async function updateStickySong() {
                 const iTunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(rawTitle)}&media=music&limit=1`);
                 const iTunesData = await iTunesRes.json();
                 if (iTunesData.results && iTunesData.results.length > 0) {
-                    // Holt das Cover-Bild und macht es hochauflösender (600x600)
                     coverSrc = iTunesData.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
                 }
             } catch (coverError) {
-                console.log("Kein Cover bei iTunes gefunden, nutze Logo.");
+                console.log("Kein Cover bei iTunes gefunden.");
             }
         }
 
         // 4. HTML in der Leiste aktualisieren
-        document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">${displayArtist}</span> - ${displayTitle}`;
+        document.getElementById("currentSong").innerHTML = finalDisplay;
         document.getElementById("songCover").src = coverSrc;
 
     } catch (error) {

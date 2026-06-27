@@ -22,23 +22,10 @@
         </nav>
     </header>
 
-    <main class="content-wrapper">
-
+    <main class="content-wrapper" style="padding-bottom: 90px;">
         <section class="hero animate-fade-in">
             <h1>Fühle den Sound.</h1>
             <p>Dein Lieblingsradio im Netz – rund um die Uhr die besten Tracks.</p>
-            
-            <div class="radio-player" style="margin-top: 25px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); display: inline-block; text-align: center; min-width: 200px;">
-                <p style="margin: 0 0 15px 0; font-weight: bold; font-size: 1.1rem;">Jetzt live einschalten</p>
-                
-                <audio id="radioStream">
-                    <source src="https://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
-                </audio>
-
-                <button id="playBtn" onclick="togglePlay()" style="background: #ff0055; color: white; border: none; padding: 12px 30px; font-size: 1rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4); transition: transform 0.2s, background 0.2s;">
-                    ▶ Radio Abspielen
-                </button>
-            </div>
         </section>
 
         <section id="about" class="section animate-fade-in">
@@ -84,8 +71,31 @@
                 ></iframe>
             </div>
         </section>
-
     </main>
+
+    <div class="sticky-player" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(15, 12, 30, 0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 9999;">
+        
+        <div style="display: flex; align-items: center; gap: 20px; max-width: 60%;">
+            <div>
+                <div style="font-weight: bold; color: #fff; font-size: 1.1rem; line-height: 1.1;">Joy <span style="color: #ff0055;">FM</span></div>
+                <div style="font-size: 0.75rem; color: #ff0055; font-weight: bold; margin-top: 2px; letter-spacing: 1px;">LIVE</div>
+            </div>
+            <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 20px; overflow: hidden; white-space: nowrap;">
+                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase;">Aktueller Song:</div>
+                <div id="currentSong" style="font-size: 0.95rem; color: #fff; font-weight: 500; text-overflow: ellipsis; overflow: hidden;">Lade Songtitel...</div>
+            </div>
+        </div>
+
+        <audio id="radioStream">
+            <source src="https://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
+        </audio>
+
+        <div>
+            <button id="playBtn" onclick="togglePlay()" style="background: #ff0055; color: white; border: none; padding: 10px 24px; font-size: 0.95rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 0, 85, 0.3); transition: all 0.2s;">
+                ▶ Abspielen
+            </button>
+        </div>
+    </div>
 
     <script>
     // Player Logik
@@ -94,15 +104,39 @@
 
     function togglePlay() {
         if (audio.paused) {
-            audio.play();
-            playBtn.innerHTML = "⏸ Radio Stoppen";
-            playBtn.style.background = "#333"; // Ändert die Farbe beim Abspielen
+            audio.play().catch(err => console.log("Stream-Fehler oder URL fehlt."));
+            playBtn.innerHTML = "⏸ Stoppen";
+            playBtn.style.background = "rgba(255,255,255,0.15)";
+            playBtn.style.border = "1px solid rgba(255,255,255,0.3)";
         } else {
             audio.pause();
-            playBtn.innerHTML = "▶ Radio Abspielen";
+            playBtn.innerHTML = "▶ Abspielen";
             playBtn.style.background = "#ff0055";
+            playBtn.style.border = "none";
         }
     }
+
+    // Song-Anzeige Logik (Laden via API)
+    async function updateSong() {
+        try {
+            // Falls dein Panel eine extra API für den aktuellen Track hat, hier die URL austauschen:
+            const res = await fetch("https://panel.joystream-fm.de/includes/team_mitglieder", { headers: { "Accept":"application/json" }});
+            const data = await res.json();
+            
+            // Holt den aktuellen Titel aus den API-Daten (Pass das Mapping an, falls die Keys anders heißen, z.B. data.now_playing)
+            if(data && data.now_playing) {
+                document.getElementById("currentSong").textContent = data.now_playing;
+            } else {
+                document.getElementById("currentSong").textContent = "Musik für dich!";
+            }
+        } catch (error) {
+            document.getElementById("currentSong").textContent = "Joy FM - Dein Live Radio";
+        }
+    }
+
+    // Song alle 15 Sekunden neu abfragen
+    updateSong();
+    setInterval(updateSong, 15000);
 
     // Team-Listen Logik
     const TEAM_LIST = "https://panel.joystream-fm.de/includes/team_mitglieder";

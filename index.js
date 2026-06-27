@@ -20,50 +20,45 @@ function togglePlay() {
 }
 
 // ==========================================
-// 2. LIVE-SONG & COVER ANZEIGE (ÜBER PHP-PROXY)
+// 2. LIVE-SONG AUS ICECAST (ÜBER PHP-PROXY)
 // ==========================================
 async function updateStickySong() {
     try {
         const res = await fetch("get_song.php");
-        
-        // Prüfen, ob die get_song.php überhaupt antwortet
-        if (!res.ok) {
-            throw new Error("get_song.php konnte nicht geladen werden");
-        }
+        if (!res.ok) throw new Error("Fehler beim Laden der Songdaten");
         
         const data = await res.json();
-        console.log("Empfangene Radio-Daten:", data); // Schreibt die Daten in die Browser-Konsole (F12)
+        let liveSong = "Joy FM – Fühle den Sound";
+        let coverSrc = "transparent-logo.png"; // Standard-Fallcover, falls kein Song-Bild da ist
 
-        let title = "Joy FM – Musik läuft!";
-        let coverSrc = "transparent-logo.png";
-
-        // Flexibles Auslesen, je nachdem wie euer Panel aufgebaut ist
-        if (data) {
-            if (data.now_playing) {
-                title = data.now_playing;
-            } else if (data.title) {
-                title = data.title;
-            } else if (data.tracks && data.tracks.length > 0) {
-                title = data.tracks[0].title || data.tracks[0].name || title;
-                if (data.tracks[0].cover) coverSrc = data.tracks[0].cover;
-            }
+        // Icecast JSON-Struktur nach dem aktuellen Titel durchsuchen
+        if (data && data.icestats && data.icestats.source) {
+            const source = data.icestats.source;
             
-            if (data.cover) {
-                coverSrc = data.cover;
+            if (Array.isArray(source)) {
+                for (let s of source) {
+                    if (s.title) {
+                        liveSong = s.title;
+                        break;
+                    }
+                }
+            } else if (source.title) {
+                liveSong = source.title;
             }
         }
 
-        document.getElementById("currentSong").textContent = title;
+        // Titel und Cover in der Leiste aktualisieren
+        document.getElementById("currentSong").textContent = liveSong;
         document.getElementById("songCover").src = coverSrc;
 
     } catch (error) {
-        console.error("Fehler beim Laden des Songtitels:", error);
-        document.getElementById("currentSong").textContent = "Joy FM – Fühle den Sound";
+        console.log("Fehler beim Icecast-Auslesen:", error);
+        document.getElementById("currentSong").textContent = "Joy FM – Dein Live Radio";
         document.getElementById("songCover").src = "transparent-logo.png";
     }
 }
 
-// Alle 15 Sekunden aktualisieren
+// Song alle 15 Sekunden automatisch aktualisieren
 updateStickySong();
 setInterval(updateStickySong, 15000);
 
@@ -119,4 +114,5 @@ async function loadMember(id){
   }
 }
 
+// Team direkt beim Laden initialisieren
 loadTeam();

@@ -28,12 +28,16 @@
             <h1>Fühle den Sound.</h1>
             <p>Dein Lieblingsradio im Netz – rund um die Uhr die besten Tracks.</p>
             
-            <div class="radio-player" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); display: inline-block;">
-                <p style="margin: 0 0 10px 0; font-weight: bold;">Jetzt live einschalten:</p>
-                <audio controls style="width: 100%; max-width: 300px;">
+            <div class="radio-player" style="margin-top: 25px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); display: inline-block; text-align: center; min-width: 200px;">
+                <p style="margin: 0 0 15px 0; font-weight: bold; font-size: 1.1rem;">Jetzt live einschalten</p>
+                
+                <audio id="radioStream">
                     <source src="https://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
-                    Dein Browser unterstützt das Audio-Element nicht.
                 </audio>
+
+                <button id="playBtn" onclick="togglePlay()" style="background: #ff0055; color: white; border: none; padding: 12px 30px; font-size: 1rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 0, 85, 0.4); transition: transform 0.2s, background 0.2s;">
+                    ▶ Radio Abspielen
+                </button>
             </div>
         </section>
 
@@ -84,6 +88,23 @@
     </main>
 
     <script>
+    // Player Logik
+    const audio = document.getElementById('radioStream');
+    const playBtn = document.getElementById('playBtn');
+
+    function togglePlay() {
+        if (audio.paused) {
+            audio.play();
+            playBtn.innerHTML = "⏸ Radio Stoppen";
+            playBtn.style.background = "#333"; // Ändert die Farbe beim Abspielen
+        } else {
+            audio.pause();
+            playBtn.innerHTML = "▶ Radio Abspielen";
+            playBtn.style.background = "#ff0055";
+        }
+    }
+
+    // Team-Listen Logik
     const TEAM_LIST = "https://panel.joystream-fm.de/includes/team_mitglieder";
     const TEAM_DETAIL = (id) => "https://panel.joystream-fm.de/includes/team_mitglieder?id=" + encodeURIComponent(id);
 

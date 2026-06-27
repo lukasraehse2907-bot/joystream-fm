@@ -1,138 +1,121 @@
-// ==========================================
-// 1. PLAYER-LOGIK (PLAY / PAUSE)
-// ==========================================
-const audio = document.getElementById('radioStream');
-const playBtn = document.getElementById('playBtn');
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joy FM | Dein Live Radio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-function togglePlay() {
-    if (!audio) return;
-    if (audio.paused) {
-        audio.play().catch(err => console.log("Stream-Fehler oder URL fehlt."));
-        playBtn.innerHTML = "⏸ Stoppen";
-        playBtn.style.background = "rgba(255,255,255,0.15)";
-        playBtn.style.border = "1px solid rgba(255,255,255,0.3)";
-    } else {
-        audio.pause();
-        playBtn.innerHTML = "▶ Abspielen";
-        playBtn.style.background = "#ff0055";
-        playBtn.style.border = "none";
-    }
-}
+    <div class="bg-glow"></div>
 
-// ==========================================
-// 2. LIVE-SONG AUS ICECAST & ITUNES-COVER
-// ==========================================
-async function updateStickySong() {
-    try {
-        const res = await fetch("get_song.php");
-        if (!res.ok) throw new Error("Fehler beim Laden der Songdaten");
-        
-        const data = await res.json();
-        let rawTitle = "";
-
-        // 1. Icecast JSON-Struktur nach dem Text durchsuchen
-        if (data && data.icestats && data.icestats.source) {
-            const source = data.icestats.source;
-            if (Array.isArray(source)) {
-                for (let s of source) {
-                    if (s.title) { rawTitle = s.title; break; }
-                }
-            } else if (source.title) {
-                rawTitle = source.title;
-            }
-        }
-
-        let finalDisplay = "Joy FM - Dein Live Radio";
-        let coverSrc = "transparent-logo.png"; // Fallback-Bild
-
-        if (rawTitle && rawTitle.trim() !== "") {
-            // 2. Text prüfen und formatieren
-            if (rawTitle.includes(" - ")) {
-                const parts = rawTitle.split(" - ");
-                finalDisplay = `<span style="color: #ff0055; font-weight: bold;">${parts[0].trim()}</span> - ${parts[1].trim()}`;
-            } else {
-                // Wenn kein Bindestrich da ist, zeigen wir den kompletten Text direkt an
-                finalDisplay = rawTitle.trim();
-            }
-
-            // 3. Cover-Bild live über die iTunes API suchen
-            try {
-                const iTunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(rawTitle)}&media=music&limit=1`);
-                const iTunesData = await iTunesRes.json();
-                if (iTunesData.results && iTunesData.results.length > 0) {
-                    coverSrc = iTunesData.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
-                }
-            } catch (coverError) {
-                console.log("Kein Cover bei iTunes gefunden.");
-            }
-        }
-
-        // 4. HTML in der Leiste aktualisieren
-        document.getElementById("currentSong").innerHTML = finalDisplay;
-        document.getElementById("songCover").src = coverSrc;
-
-    } catch (error) {
-        console.log("Fehler beim Icecast- oder Cover-Auslesen:", error);
-        document.getElementById("currentSong").textContent = "Joy FM – Fühle den Sound";
-        document.getElementById("songCover").src = "transparent-logo.png";
-    }
-}
-
-// Song alle 15 Sekunden automatisch aktualisieren
-updateStickySong();
-setInterval(updateStickySong, 15000);
-
-// ==========================================
-// 3. TEAM-LISTEN LOGIK
-// ==========================================
-const TEAM_LIST = "https://panel.joystream-fm.de/includes/team_mitglieder";
-const TEAM_DETAIL = (id) => "https://panel.joystream-fm.de/includes/team_mitglieder?id=" + encodeURIComponent(id);
-
-function escapeHtml(value){
-  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[char]));
-}
-
-async function loadTeam(){
-  try {
-      const res = await fetch(TEAM_LIST, { headers: { "Accept":"application/json" }});
-      const data = await res.json();
-      if(!data.ok) return document.getElementById("teamList").textContent = "Fehler beim Laden";
-
-      document.getElementById("teamList").innerHTML = data.members.map(m =>
-        `<button style="display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;cursor:pointer"
-          onclick="loadMember(${m.id})">${escapeHtml(m.name)} (#${m.id})</button>`
-      ).join("");
-  } catch(e) {
-      document.getElementById("teamList").textContent = "Team-API aktuell nicht erreichbar.";
-  }
-}
-
-async function loadMember(id){
-  try {
-      const res = await fetch(TEAM_DETAIL(id), { headers: { "Accept":"application/json" }});
-      const data = await res.json();
-      if(!data.ok) return document.getElementById("teamDetails").textContent = "Nicht gefunden";
-
-      const m = data.member;
-      const bio = m.bio ? escapeHtml(m.bio).replace(/\n/g, "<br>") : "Keine Beschreibung vorhanden.";
-
-      document.getElementById("teamDetails").innerHTML = `
-        <div style="margin-top:12px;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20)">
-          <b>${escapeHtml(m.name)}</b> <span style="opacity:.75">(${escapeHtml(m.role)})</span><br>
-          ${m.avatar ? `<img src="${escapeHtml(m.avatar)}" style="margin-top:10px;width:84px;height:84px;border-radius:18px;object-fit:cover;border:1px solid rgba(255,255,255,.12)">` : `<div style="opacity:.7;margin-top:10px">Kein Avatar</div>`}
-          <div style="margin-top:12px;opacity:.85;line-height:1.45">${bio}</div>
+    <header class="main-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="logo">
+            <img src="transparent-logo.png" alt="Joy FM Logo" style="height: 50px; width: auto; object-fit: contain; vertical-align: middle;">
         </div>
-      `;
-  } catch(e) {
-      console.log("Fehler beim Laden des Mitglieds", e);
-  }
-}
+        <nav class="nav-links">
+            <a href="#about">Über uns</a>
+            <a href="#schedule">Sendeplan</a>
+            <a href="#partner">Partner</a>
+            <a href="#team">Team</a>
+            <a href="#tracks">Tracklist</a>
+            <a href="#socials">Social Media</a>
+        </nav>
+    </header>
 
-// Team direkt beim Laden initialisieren
-loadTeam();
+    <main class="content-wrapper" style="padding-bottom: 90px;">
+        <section class="hero animate-fade-in">
+            <h1>Fühle den Sound.</h1>
+            <p>Dein Lieblingsradio im Netz – rund um die Uhr die besten Tracks.</p>
+        </section>
+
+        <section id="about" class="section animate-fade-in">
+            <h2>👥 Über uns</h2>
+            <p>Joy FM ist dein interaktives Webradio. Wir bringen dir die neueste Musik, Live-DJs und eine großartige Community direkt nach Hause. Einschalten, Lautstärke aufdrehen und den Alltag vergessen!</p>
+        </section>
+
+        <section id="schedule" class="section animate-fade-in">
+            <h2>📅 Sendeplan</h2>
+            <div id="sendeplan-container" class="partner-grid" style="margin-top: 20px;">
+                <iframe
+                    src="https://panel.joystream-fm.de/public/sendeplan"
+                    style="width:100%;height:720px;border:0;border-radius:16px"
+                    loading="lazy"
+                ></iframe>
+            </div>
+        </section>
+
+        <section id="partner" class="section animate-fade-in">
+            <h2>🤝 Unsere Partner</h2>
+            <div class="partner-grid">
+                <a href="https://deine-partner-url-1.de" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="partner-card" style="cursor: pointer;">⚡ Partner One</div>
+                </a>
+                <a href="https://deine-partner-url-2.de" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="partner-card" style="cursor: pointer;">🔥 Partner Two</div>
+                </a>
+                <a href="https://deine-partner-url-3.de" target="_blank" style="text-decoration: none; color: inherit;">
+                    <div class="partner-card" style="cursor: pointer;">💎 Partner Three</div>
+                </a>
+            </div>
+        </section>
+
+        <section id="team" class="section animate-fade-in">
+            <h2>🎧 Unser Team</h2>
+            <div style="margin-top: 20px;">
+                <div id="teamList">Lade Team…</div>
+                <div id="teamDetails"></div>
+            </div>
+        </section>
+
+        <section id="tracks" class="section animate-fade-in">
+            <h2>🎵 Interaktion & Musik</h2>
+            
+            <h3 style="color: #fff; margin-top: 20px;">✉️ Gruß- und Wunschbox</h3>
+            <div style="margin-top: 10px; margin-bottom: 30px;">
+                <iframe
+                    src="https://panel.joystream-fm.de/public/gruwu.php"
+                    style="width:100%;height:720px;border:0;border-radius:16px"
+                    loading="lazy"
+                ></iframe>
+            </div>
+
+            <h3 style="color: #fff;">📜 Zuletzt gespielte Songs</h3>
+            <div style="margin-top: 10px;">
+                <iframe
+                    src="https://panel.joystream-fm.de/public/tracklist.php"
+                    style="width:100%;height:720px;border:0;border-radius:16px"
+                    loading="lazy"
+                ></iframe>
+            </div>
+        </section>
+    </main>
+
+    <div class="sticky-player" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(15, 12, 30, 0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; box-sizing: border-box; z-index: 9999;">
+        
+        <div style="display: flex; align-items: center; gap: 20px; max-width: 60%;">
+            <div style="display: flex; align-items: center; gap: 12px; overflow: hidden; white-space: nowrap;">
+                <img id="songCover" src="transparent-logo.png" alt="Cover" style="width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+                <div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase;">Aktueller Song:</div>
+                    <div id="currentSong" style="font-size: 0.95rem; color: #fff; font-weight: 500; text-overflow: ellipsis; overflow: hidden;">Joy FM – Musik läuft!</div>
+                </div>
+            </div>
+        </div>
+
+        <audio id="radioStream">
+            <source src="https://radioserver01.ipgenservices.de:8100/radio.mp3" type="audio/mpeg">
+        </audio>
+
+        <div>
+            <button id="playBtn" onclick="togglePlay()" style="background: #ff0055; color: white; border: none; padding: 10px 24px; font-size: 0.95rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 0, 85, 0.3); transition: all 0.2s;">
+                ▶ Abspielen
+            </button>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+
+</body>
+</html>

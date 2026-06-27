@@ -20,7 +20,7 @@ function togglePlay() {
 }
 
 // ==========================================
-// 2. LIVE-SONG AUS ICECAST (ÜBER PHP-PROXY)
+// 2. LIVE-SONG AUS ICECAST & ITUNES-COVER
 // ==========================================
 async function updateStickySong() {
     try {
@@ -28,32 +28,55 @@ async function updateStickySong() {
         if (!res.ok) throw new Error("Fehler beim Laden der Songdaten");
         
         const data = await res.json();
-        let liveSong = "Joy FM – Fühle den Sound";
-        let coverSrc = "transparent-logo.png"; // Standard-Fallcover, falls kein Song-Bild da ist
+        let rawTitle = "";
 
-        // Icecast JSON-Struktur nach dem aktuellen Titel durchsuchen
+        // 1. Icecast JSON-Struktur nach dem Text durchsuchen
         if (data && data.icestats && data.icestats.source) {
             const source = data.icestats.source;
-            
             if (Array.isArray(source)) {
                 for (let s of source) {
-                    if (s.title) {
-                        liveSong = s.title;
-                        break;
-                    }
+                    if (s.title) { rawTitle = s.title; break; }
                 }
             } else if (source.title) {
-                liveSong = source.title;
+                rawTitle = source.title;
             }
         }
 
-        // Titel und Cover in der Leiste aktualisieren
-        document.getElementById("currentSong").textContent = liveSong;
+        // Standard-Werte setzen, falls nichts läuft
+        let displayArtist = "Joy FM";
+        let displayTitle = "Dein Live Radio";
+        let coverSrc = "transparent-logo.png"; // Fallback-Bild
+
+        if (rawTitle && rawTitle.trim() !== "") {
+            // 2. Text am Bindestrich aufteilen (Künstler - Titel)
+            if (rawTitle.includes(" - ")) {
+                const parts = rawTitle.split(" - ");
+                displayArtist = parts[0].trim();
+                displayTitle = parts[1].trim();
+            } else {
+                displayTitle = rawTitle.trim();
+            }
+
+            // 3. Cover-Bild live über die iTunes API suchen
+            try {
+                const iTunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(rawTitle)}&media=music&limit=1`);
+                const iTunesData = await iTunesRes.json();
+                if (iTunesData.results && iTunesData.results.length > 0) {
+                    // Holt das Cover-Bild und macht es hochauflösender (600x600)
+                    coverSrc = iTunesData.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
+                }
+            } catch (coverError) {
+                console.log("Kein Cover bei iTunes gefunden, nutze Logo.");
+            }
+        }
+
+        // 4. HTML in der Leiste aktualisieren
+        document.getElementById("currentSong").innerHTML = `<span style="color: #ff0055; font-weight: bold;">${displayArtist}</span> - ${displayTitle}`;
         document.getElementById("songCover").src = coverSrc;
 
     } catch (error) {
-        console.log("Fehler beim Icecast-Auslesen:", error);
-        document.getElementById("currentSong").textContent = "Joy FM – Dein Live Radio";
+        console.log("Fehler beim Icecast- oder Cover-Auslesen:", error);
+        document.getElementById("currentSong").textContent = "Joy FM – Fühle den Sound";
         document.getElementById("songCover").src = "transparent-logo.png";
     }
 }

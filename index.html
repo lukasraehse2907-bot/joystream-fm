@@ -967,37 +967,37 @@ function togglePlay() {
 volSlider.addEventListener('input', function() { audio.volume = this.value / 100; });
 audio.volume = 0.8;
 
-// ===== ICECAST METADATA =====
-let lastTitle = '';
+// ===== AZURACAST NOW PLAYING API =====
+const AZURACAST_API = 'https://radioserver01.ipgenservices.de/api/nowplaying/39';
+let lastSongId = '';
 
 async function fetchNowPlaying() {
   try {
-    const res = await fetch(ICECAST_STATUS + '?nocache=' + Date.now());
+    const res = await fetch(AZURACAST_API + '?nocache=' + Date.now());
     const data = await res.json();
-    let sources = data?.icestats?.source;
-    if (!sources) { setNowPlaying('', 'Joystream FM', 'Joystream FM', null); return; }
-    if (!Array.isArray(sources)) sources = [sources];
-    const src = sources.find(s => s.listenurl && s.listenurl.includes('radio.mp3')) || sources[0];
-    if (!src) { setNowPlaying('', 'Joystream FM', 'Joystream FM', null); return; }
 
-    // Icecast liefert artist und title als separate Felder
-    const artist = src.artist || '';
-    const song = src.title || src.yp_currently_playing || 'Joystream FM';
-    const dj = src.server_name || '';
-    const listeners = src.listeners;
+    const np = data.now_playing?.song;
+    const artist = np?.artist || '';
+    const song = np?.title || 'Joystream FM';
+    const coverUrl = np?.art || '';
+    const listeners = data.listeners?.total ?? null;
 
-    setNowPlaying(song, artist, dj, listeners);
+    // DJ on air?
+    const isLive = data.live?.is_live || false;
+    const djName = data.live?.streamer_name || '';
 
-    // Cover nur neu laden wenn anderer Song
-    const raw = (artist + ' - ' + song).trim();
-    if (raw && raw !== lastTitle) {
-      lastTitle = raw;
-      fetchCover(artist, song);
+    setNowPlaying(song, artist, isLive ? djName : '', listeners);
+
+    // Cover aktualisieren wenn neuer Song
+    const songId = np?.id || song;
+    if (songId !== lastSongId) {
+      lastSongId = songId;
+      updateCover(coverUrl);
     }
   } catch(e) {
     document.getElementById('nowSong').textContent = 'Joystream FM';
     const artistEl = document.getElementById('nowArtist');
-    artistEl.parentElement.style.display = 'none';
+    if (artistEl) artistEl.parentElement.style.display = 'none';
     document.getElementById('nowListeners').textContent = '';
   }
 }
@@ -1028,10 +1028,11 @@ function setNowPlaying(song, artist, dj, listeners) {
     artistEl.parentElement.style.display = 'none';
   }
 
-  // DJ / Sendername (nur anzeigen wenn vorhanden und anders als Künstler)
-  if (dj && dj !== artist && dj !== 'Joystream FM') {
+  // DJ on air anzeigen
+  if (dj) {
     djEl.textContent = dj;
     djWrap.style.display = 'inline';
+    djWrap.innerHTML = `🎙️ On Air: <b>${esc(dj)}</b>`;
     djSep.style.display = 'inline';
   } else {
     djWrap.style.display = 'none';
@@ -1041,32 +1042,14 @@ function setNowPlaying(song, artist, dj, listeners) {
   listEl.textContent = listeners != null ? `👥 ${listeners} Hörer gerade live` : '';
 }
 
-// ===== ALBUM COVER via iTunes API =====
-async function fetchCover(artist, song) {
+function updateCover(url) {
   const coverImg = document.getElementById('coverImg');
   const placeholder = document.getElementById('coverPlaceholder');
-  try {
-    const q = encodeURIComponent((artist ? artist + ' ' : '') + song);
-    const res = await fetch(`https://itunes.apple.com/search?term=${q}&media=music&limit=1`);
-    const data = await res.json();
-    if (data.results && data.results.length > 0) {
-      const url = data.results[0].artworkUrl100.replace('100x100', '300x300');
-      const img = new Image();
-      img.onload = () => {
-        coverImg.src = url;
-        coverImg.style.display = 'block';
-        placeholder.style.display = 'none';
-      };
-      img.onerror = () => { coverImg.style.display = 'none'; placeholder.style.display = 'flex'; };
-      img.src = url;
-    } else {
-      coverImg.style.display = 'none';
-      placeholder.style.display = 'flex';
-    }
-  } catch(e) {
-    coverImg.style.display = 'none';
-    placeholder.style.display = 'flex';
-  }
+  if (!url) { coverImg.style.display = 'none'; placeholder.style.display = 'flex'; return; }
+  const img = new Image();
+  img.onload = () => { coverImg.src = url; coverImg.style.display = 'block'; placeholder.style.display = 'none'; };
+  img.onerror = () => { coverImg.style.display = 'none'; placeholder.style.display = 'flex'; };
+  img.src = url;
 }
 
 // Sofort laden + alle 15 Sekunden aktualisieren

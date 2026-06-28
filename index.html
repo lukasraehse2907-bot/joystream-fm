@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+<!-- CSP vorübergehend entfernt, da sie den Audiostream blockiert hat -->
+<!-- TODO: Später mit korrekt erlaubten Domains wieder einbauen -->
 <meta charset="UTF-8">
-<!-- Basis-CSP über meta-Tag (Notlösung ohne Serverzugriff; frame-ancestors etc. funktionieren nur per HTTP-Header, siehe .htaccess) -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://radioserver01.ipgenservices.de https://panel.joystream-fm.de; media-src 'self' https://radioserver01.ipgenservices.de; frame-src https://panel.joystream-fm.de;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Joystream FM – Dein Online Radio</title>
 

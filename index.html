@@ -111,8 +111,8 @@
   /* NAV */
   header { position: sticky; top: 0; z-index: 100; background: rgba(8,8,16,0.96); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(130,90,255,0.25); padding: 0 32px; box-shadow: 0 2px 30px rgba(0,0,0,0.4); }
   nav { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 20px; }
-  .logo { display: flex; align-items: center; flex-shrink: 0; }
-  .logo-img { height: 38px; width: auto; object-fit: contain; display: block; }
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: 0.04em; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; white-space: nowrap; }
+  .logo-img { height: 32px; width: auto; object-fit: contain; display: block; flex-shrink: 0; -webkit-text-fill-color: initial; }
   .nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
   .nav-links a { color: var(--text2); text-decoration: none; font-size: 14px; font-weight: 500; padding: 6px 14px; border-radius: 8px; transition: all 0.2s; cursor: pointer; }
   .nav-links a:hover { color: var(--text); background: rgba(130,90,255,0.15); }
@@ -544,7 +544,7 @@
 <header>
   <nav>
     <div class="logo">
-      <img src="transparent-logo.png" alt="Joystream FM Logo" class="logo-img">
+      <img src="transparent-logo.png" alt="Joystream FM" class="logo-img"> JOYSTREAM FM
     </div>
     <div class="nav-links">
       <a href="#about">Über uns</a>
@@ -1004,7 +1004,8 @@ async function fetchNowPlaying() {
     }
   } catch(e) {
     document.getElementById('nowSong').textContent = 'Joystream FM';
-    document.getElementById('nowArtist').textContent = 'Live Radio';
+    const artistEl = document.getElementById('nowArtist');
+    artistEl.parentElement.style.display = 'none';
     document.getElementById('nowListeners').textContent = '';
   }
 }
@@ -1027,8 +1028,13 @@ function setNowPlaying(song, artist, dj, listeners) {
     }, 300);
   }
 
-  // Künstler
-  artistEl.textContent = artist || 'Joystream FM';
+  // Künstler - nur anzeigen wenn vorhanden
+  if (artist) {
+    artistEl.textContent = artist;
+    artistEl.parentElement.style.display = '';
+  } else {
+    artistEl.parentElement.style.display = 'none';
+  }
 
   // DJ / Sendername (nur anzeigen wenn vorhanden und anders als Künstler)
   if (dj && dj !== artist && dj !== 'Joystream FM') {

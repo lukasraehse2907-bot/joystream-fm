@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<!-- Basis-CSP über meta-Tag (Notlösung ohne Serverzugriff; frame-ancestors etc. funktionieren nur per HTTP-Header, siehe .htaccess) -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://radioserver01.ipgenservices.de https://panel.joystream-fm.de; media-src 'self' https://radioserver01.ipgenservices.de; frame-src https://panel.joystream-fm.de;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Joystream FM – Dein Online Radio</title>
 
@@ -27,8 +29,8 @@
 <meta name="twitter:description" content="Live-Musik, Wunschsendungen, Grüße und mehr. Rund um die Uhr die besten Hits!">
 <meta name="twitter:image" content="transparent-logo.png">
 
-<!-- Favicon -->
-<link rel="icon" type="image/png" href="transparent-logo.png">
+<!-- Favicon: leichtgewichtiges Inline-SVG statt der 563 KiB großen PNG-Datei -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23825aff'/%3E%3Cstop offset='1' stop-color='%2300d4ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%2310101e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='url(%23g)' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='6' fill='url(%23g)'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="transparent-logo.png">
 
 <!-- Schema.org strukturierte Daten für Google -->
@@ -214,7 +216,7 @@
   .admin-close-btn:hover { background: rgba(255,80,80,0.15); color: #ff6060; border-color: rgba(255,80,80,0.3); }
 
   /* ADMIN TABS */
-  .admin-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .admin-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--bg2); flex-wrap: wrap; }
   .admin-tab { padding: 14px 24px; font-size: 14px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'Inter', sans-serif; }
   .admin-tab:hover { color: var(--text); }
   .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(130,90,255,0.06); }
@@ -319,7 +321,7 @@
   .tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 24px; background: var(--bg2); padding: 6px; border-radius: var(--radius); border: 1px solid var(--border); }
   .tab-btn { padding: 10px 20px; border-radius: 10px; border: none; background: transparent; color: var(--text2); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
   .tab-btn:hover { color: var(--text); background: rgba(130,90,255,0.1); }
-  .tab-btn.active { background: var(--accent); color: #fff; box-shadow: 0 0 16px rgba(130,90,255,0.4); }
+  .tab-btn.active { background: #6a3df0; color: #fff; box-shadow: 0 0 16px rgba(130,90,255,0.4); }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
   .iframe-wrap { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--card); }
@@ -338,6 +340,16 @@
   .team-detail-name { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
   .team-detail-role { font-size: 13px; color: var(--accent2); font-weight: 500; }
   .team-detail-bio { font-size: 14px; line-height: 1.65; color: var(--text2); margin-top: 12px; }
+
+  /* CONTACT */
+  .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .contact-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; text-align: center; transition: all 0.2s; }
+  .contact-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .contact-icon { font-size: 28px; margin-bottom: 12px; }
+  .contact-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .contact-value { font-size: 15px; font-weight: 600; color: var(--text); word-break: break-word; }
+  .contact-value a { color: var(--accent2); text-decoration: none; }
+  .contact-value a:hover { text-decoration: underline; }
 
   /* FOOTER */
   footer { border-top: 1px solid var(--border); padding: 32px; text-align: center; color: var(--text3); font-size: 13px; margin-top: 60px; }
@@ -410,6 +422,7 @@
       <button class="admin-tab active" onclick="switchAdminTab('tab-about', this)">📝 Über uns</button>
       <button class="admin-tab" onclick="switchAdminTab('tab-social', this)">📱 Social Media</button>
       <button class="admin-tab" onclick="switchAdminTab('tab-partner', this)">🤝 Partner</button>
+      <button class="admin-tab" onclick="switchAdminTab('tab-contact', this)">📞 Kontakt</button>
       <button class="admin-tab" onclick="switchAdminTab('tab-settings', this)">🔑 Passwort</button>
     </div>
     <div class="admin-content">
@@ -504,6 +517,33 @@
         </div>
       </div>
 
+      <!-- CONTACT TAB -->
+      <div id="tab-contact" class="admin-tab-content" style="display:none">
+        <div class="admin-section">
+          <div class="admin-section-title">Kontaktdaten</div>
+          <div style="display:grid; gap:16px; grid-template-columns: 1fr 1fr;">
+            <div class="field-col">
+              <div class="field-label">📧 E-Mail</div>
+              <input type="text" class="f-input" id="editContactEmail" placeholder="info@joystream-fm.de">
+            </div>
+            <div class="field-col">
+              <div class="field-label">📞 Telefon</div>
+              <input type="text" class="f-input" id="editContactPhone" placeholder="+49 123 456789">
+            </div>
+            <div class="field-col">
+              <div class="field-label">📍 Adresse</div>
+              <input type="text" class="f-input" id="editContactAddress" placeholder="Straße, PLZ Ort">
+            </div>
+            <div class="field-col">
+              <div class="field-label">💬 WhatsApp / Sonstiges (optional)</div>
+              <input type="text" class="f-input" id="editContactExtra" placeholder="z.B. WhatsApp-Nummer">
+            </div>
+          </div>
+          <button class="btn-save" onclick="saveContact()" style="margin-top:16px">Speichern</button>
+          <div class="save-note" id="contactNote">✓ Gespeichert!</div>
+        </div>
+      </div>
+
       <!-- SETTINGS TAB -->
       <div id="tab-settings" class="admin-tab-content" style="display:none">
         <div class="admin-section">
@@ -544,7 +584,7 @@
 <header>
   <nav>
     <div class="logo">
-      <img src="transparent-logo.png" alt="Joystream FM" class="logo-img"> JOYSTREAM FM
+      <img src="transparent-logo.png" alt="Joystream FM" class="logo-img" width="32" height="32" loading="eager"> JOYSTREAM FM
     </div>
     <div class="nav-links">
       <a href="#about">Über uns</a>
@@ -554,6 +594,7 @@
       <a href="#tracklist">Sendeplan</a>
       <a href="#tracklist">Grüße &amp; Wünsche</a>
       <a href="#team">Team</a>
+      <a href="#contact">Kontakt</a>
     </div>
     <div class="nav-right">
       <button class="btn-admin-nav" id="navAdminBtn" onclick="openAdminOrLogin()" aria-label="Admin-Panel öffnen">⚙️ Admin</button>
@@ -568,7 +609,7 @@
     <div class="live-badge"><div class="live-dot"></div>LIVE</div>
     <div class="cover-wrap">
       <div class="cover-placeholder" id="coverPlaceholder" aria-hidden="true">🎵</div>
-      <img id="coverImg" class="cover-img" src="" alt="Album Cover" style="display:none; position:absolute; top:0; left:0;">
+      <img id="coverImg" class="cover-img" src="" alt="Album Cover" width="56" height="56" style="display:none; position:absolute; top:0; left:0;">
     </div>
     <div class="player-info">
       <div class="player-meta">
@@ -658,11 +699,20 @@
     <div class="team-details" id="teamDetails"></div>
   </section>
 
+  <!-- KONTAKT -->
+  <section id="contact">
+    <div class="section-label">Kontakt</div>
+    <div class="section-title">Schreib uns</div>
+    <div class="contact-grid" id="contactGrid">
+      <div style="color:var(--text3);font-size:14px">Noch keine Kontaktdaten eingetragen.</div>
+    </div>
+  </section>
+
 </main>
 
 <footer>
   <div>⚡ <span>JOYSTREAM FM</span> – Dein Online Radio &nbsp;|&nbsp; Mit ❤️ gemacht für unsere Community</div>
-  <div style="margin-top:8px;font-size:12px">© 2025 Joystream FM. Alle Rechte vorbehalten.</div>
+  <div style="margin-top:8px;font-size:12px">© 2026 Joystream FM. Alle Rechte vorbehalten.</div>
 </footer>
 
 <nav class="mobile-nav" aria-label="Mobile Navigation">
@@ -671,6 +721,7 @@
   <a href="#partner">Partner</a>
   <a href="#tracklist">Musik</a>
   <a href="#team">Team</a>
+  <a href="#contact">Kontakt</a>
 </nav>
 
 <script>
@@ -741,6 +792,7 @@ function syncAdminFields() {
   document.getElementById('editAbout2').value = document.getElementById('aboutText2').textContent;
   renderAdminSocialList();
   renderAdminPartnerList();
+  syncContactFields();
 }
 
 // Close overlays on backdrop click
@@ -928,6 +980,49 @@ function removePartner(i) {
   renderPartners(); renderAdminPartnerList();
 }
 
+// ===== CONTACT =====
+let contact = JSON.parse(localStorage.getItem('jsfm_contact') || '{}');
+
+function renderContact() {
+  const grid = document.getElementById('contactGrid');
+  const items = [];
+  if (contact.email) items.push({ icon: '📧', label: 'E-Mail', value: `<a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>` });
+  if (contact.phone) items.push({ icon: '📞', label: 'Telefon', value: `<a href="tel:${esc(contact.phone.replace(/\s+/g,''))}">${esc(contact.phone)}</a>` });
+  if (contact.address) items.push({ icon: '📍', label: 'Adresse', value: esc(contact.address) });
+  if (contact.extra) items.push({ icon: '💬', label: 'Sonstiges', value: esc(contact.extra) });
+
+  if (!items.length) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:14px">Noch keine Kontaktdaten eingetragen.</div>';
+    return;
+  }
+  grid.innerHTML = items.map(it => `<div class="contact-card">
+    <div class="contact-icon">${it.icon}</div>
+    <div class="contact-label">${it.label}</div>
+    <div class="contact-value">${it.value}</div>
+  </div>`).join('');
+}
+
+function syncContactFields() {
+  document.getElementById('editContactEmail').value = contact.email || '';
+  document.getElementById('editContactPhone').value = contact.phone || '';
+  document.getElementById('editContactAddress').value = contact.address || '';
+  document.getElementById('editContactExtra').value = contact.extra || '';
+}
+
+function saveContact() {
+  contact = {
+    email: document.getElementById('editContactEmail').value.trim(),
+    phone: document.getElementById('editContactPhone').value.trim(),
+    address: document.getElementById('editContactAddress').value.trim(),
+    extra: document.getElementById('editContactExtra').value.trim()
+  };
+  save('jsfm_contact', contact);
+  renderContact();
+  const note = document.getElementById('contactNote');
+  note.classList.add('show');
+  setTimeout(() => note.classList.remove('show'), 2500);
+}
+
 // ===== TABS (public) =====
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -1099,6 +1194,7 @@ async function loadMember(id, btn) {
 // ===== INIT =====
 renderSocials();
 renderPartners();
+renderContact();
 loadTeam();
 updateNavAuth();
 </script>

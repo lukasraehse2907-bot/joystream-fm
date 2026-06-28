@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+ 
+Sitemap: https://www.joystream-fm.de/sitemap.xml
+ 

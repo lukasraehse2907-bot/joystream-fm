@@ -980,27 +980,19 @@ async function fetchNowPlaying() {
     const src = sources.find(s => s.listenurl && s.listenurl.includes('radio.mp3')) || sources[0];
     if (!src) { setNowPlaying('', 'Joystream FM', 'Joystream FM', null); return; }
 
-    // Icecast title ist meist "Künstler - Titel"
-    const raw = src.title || '';
-    let artist = '', song = '';
-    if (raw.includes(' - ')) {
-      const parts = raw.split(' - ');
-      artist = parts[0].trim();
-      song = parts.slice(1).join(' - ').trim();
-    } else {
-      artist = '';
-      song = raw || 'Joystream FM';
-    }
-
-    const dj = src.server_name || src.description || '';
+    // Icecast liefert artist und title als separate Felder
+    const artist = src.artist || '';
+    const song = src.title || src.yp_currently_playing || 'Joystream FM';
+    const dj = src.server_name || '';
     const listeners = src.listeners;
 
     setNowPlaying(song, artist, dj, listeners);
 
     // Cover nur neu laden wenn anderer Song
+    const raw = (artist + ' - ' + song).trim();
     if (raw && raw !== lastTitle) {
       lastTitle = raw;
-      fetchCover(artist || song, song);
+      fetchCover(artist, song);
     }
   } catch(e) {
     document.getElementById('nowSong').textContent = 'Joystream FM';

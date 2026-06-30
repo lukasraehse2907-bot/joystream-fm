@@ -1,0 +1,21 @@
+# Diese Datei als ".htaccess" auf panel.joystream-fm.de hochladen (NICHT auf www.joystream-fm.de)
+# Pfad: dort wo api.php liegt
+
+<IfModule mod_headers.c>
+    # CORS für alle PHP-Dateien erlauben
+    <FilesMatch "\.php$">
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+    </FilesMatch>
+</IfModule>
+
+# Redirects für api.php abschalten (verhindert den 301)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Wenn eine Regel api.php weiterleitet, hier ausschließen:
+    RewriteRule ^api\.php$ - [L]
+</IfModule>
+
+# Verzeichnis-Listing verbieten
+Options -Indexes

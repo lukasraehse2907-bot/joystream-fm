@@ -2,7 +2,7 @@
 // db.php — Datenbankverbindung. Trage hier deine echten MySQL-Zugangsdaten ein.
 // Diese Datei NICHT öffentlich zugänglich machen / nicht in ein öffentliches Git-Repo legen.
 
-$DB_HOST = 'localhost';.
+$DB_HOST = 'localhost';
 $DB_NAME = 'joystream_fm';      // <- anpassen
 $DB_USER = 'dein_db_user';      // <- anpassen
 $DB_PASS = 'dein_db_passwort';  // <- anpassen

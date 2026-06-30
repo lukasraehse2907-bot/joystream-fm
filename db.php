@@ -4,8 +4,8 @@
 
 $DB_HOST = 'localhost';
 $DB_NAME = 'joystream_fm';      // <- anpassen
-$DB_USER = 'dein_db_user';      // <- anpassen
-$DB_PASS = 'dein_db_passwort';  // <- anpassen
+$DB_USER = 'DJ_Lukas';      // <- anpassen
+$DB_PASS = 'd290711RR.';  // <- anpassen
 
 try {
     $pdo = new PDO(

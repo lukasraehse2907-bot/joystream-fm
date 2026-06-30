@@ -809,7 +809,11 @@ async function doLogin() {
     }
   } catch (e) {
     // Netzwerk- oder CORS-Fehler
-    err.textContent = '✕ Verbindung zum Server fehlgeschlagen. Prüfe ob api.php erreichbar ist.';
+    const msg = e instanceof TypeError
+      ? '✕ Server nicht erreichbar (CORS oder Netzwerk). Stelle sicher dass api.php auf panel.joystream-fm.de hochgeladen ist und die Domain korrekt ist.'
+      : '✕ Fehler: ' + (e.message || 'Unbekannter Fehler');
+    err.textContent = msg;
+    console.error('[Login]', e);
     const box = document.getElementById('loginBox');
     box.classList.remove('shake');
     void box.offsetWidth;
@@ -1299,7 +1303,7 @@ function toggleVideo() {
 function renderVideoFrame(videoId) {
   const wrap = document.getElementById('videoFrameWrap');
   wrap.innerHTML = `<iframe
-    src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0"
+    src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=0&rel=0"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen title="Musikvideo"></iframe>`;
 }

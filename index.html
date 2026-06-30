@@ -757,8 +757,8 @@
 
 <script>
 // ===== KONFIGURATION =====
-// Basis-URL deines PHP/MySQL-Backends (siehe api.php, im selben Ordner wie panel.joystream-fm.de hochladen)
-const API_BASE = 'https://panel.joystream-fm.de/api.php';
+// api.php liegt im selben Ordner wie index.html auf www.joystream-fm.de
+const API_BASE = '/api.php';
 
 function authHeaders() {
   const token = localStorage.getItem('jsfm_token') || '';

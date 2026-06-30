@@ -786,6 +786,11 @@ async function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
   const err = document.getElementById('loginError');
+  const submitBtn = document.querySelector('.btn-login-submit');
+  if (!u) { err.textContent = '✕ Bitte Benutzernamen eingeben.'; return; }
+  if (!p) { err.textContent = '✕ Bitte Passwort eingeben.'; return; }
+  submitBtn.textContent = 'Anmelden…';
+  submitBtn.disabled = true;
   try {
     const data = await apiPost('login', { username: u, password: p });
     if (data.ok) {
@@ -795,15 +800,24 @@ async function doLogin() {
       openAdminPanel();
       updateNavAuth();
     } else {
-      throw new Error(data.error || 'Login fehlgeschlagen');
+      err.textContent = '✕ ' + (data.error || 'Benutzername oder Passwort falsch.');
+      const box = document.getElementById('loginBox');
+      box.classList.remove('shake');
+      void box.offsetWidth;
+      box.classList.add('shake');
+      document.getElementById('loginPass').value = '';
     }
   } catch (e) {
-    err.textContent = '✕ Benutzername oder Passwort falsch.';
+    // Netzwerk- oder CORS-Fehler
+    err.textContent = '✕ Verbindung zum Server fehlgeschlagen. Prüfe ob api.php erreichbar ist.';
     const box = document.getElementById('loginBox');
     box.classList.remove('shake');
     void box.offsetWidth;
     box.classList.add('shake');
     document.getElementById('loginPass').value = '';
+  } finally {
+    submitBtn.textContent = 'Anmelden';
+    submitBtn.disabled = false;
   }
 }
 
@@ -1245,12 +1259,20 @@ function updateCover(url) {
   img.src = url;
 }
 
-// ===== MUSIKVIDEO (per Invidious-Suche, ohne YouTube API-Key) =====
-// Öffentliche Invidious-Instanzen, mehrere als Fallback (Instanzen können mal offline sein)
+// ===== MUSIKVIDEO =====
+// Suche über mehrere öffentliche Invidious-Instanzen (YouTube-Proxy, kein API-Key nötig).
+// Invidious-Instanzen können mal offline sein – daher viele Fallbacks.
 const INVIDIOUS_INSTANCES = [
+  'https://inv.nadeko.net',
+  'https://invidious.privacydev.net',
   'https://yewtu.be',
+  'https://iv.melmac.space',
+  'https://invidious.perennialte.ch',
   'https://invidious.fdn.fr',
-  'https://invidious.nerdvpn.de'
+  'https://invidious.nerdvpn.de',
+  'https://vid.puffyan.us',
+  'https://invidious.io.lol',
+  'https://yt.artemislena.eu'
 ];
 let videoVisible = false;
 let currentVideoId = null;
@@ -1259,38 +1281,74 @@ function toggleVideo() {
   videoVisible = !videoVisible;
   document.getElementById('videoArea').style.display = videoVisible ? 'block' : 'none';
   document.getElementById('videoToggleBtn').textContent = videoVisible ? 'Ausblenden' : 'Anzeigen';
-  if (videoVisible && currentVideoId) renderVideoFrame(currentVideoId);
+  if (!videoVisible) return;
+
+  if (currentVideoId && currentVideoId !== '__search__') {
+    renderVideoFrame(currentVideoId);
+  } else if (currentVideoId === '__search__') {
+    const song = document.getElementById('nowSong').textContent;
+    const artist = document.getElementById('nowArtist').textContent;
+    const query = `${artist} ${song}`.trim();
+    const wrap = document.getElementById('videoFrameWrap');
+    wrap.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(query + ' official music video')}&autoplay=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Musikvideo Suche"></iframe>`;
+  } else {
+    document.getElementById('videoFrameWrap').innerHTML = '<div class="video-empty">Kein Video verfügbar.</div>';
+  }
 }
 
 function renderVideoFrame(videoId) {
   const wrap = document.getElementById('videoFrameWrap');
-  wrap.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Musikvideo"></iframe>`;
+  wrap.innerHTML = `<iframe
+    src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen title="Musikvideo"></iframe>`;
 }
 
 async function fetchMusicVideo(artist, song) {
   const query = `${artist} ${song}`.trim();
   if (!query || query === lastVideoQuery) return;
   lastVideoQuery = query;
-  document.getElementById('videoTitleText').textContent = '🎬 Suche Video: ' + (artist ? `${artist} – ${song}` : song);
+  const label = artist ? `${artist} – ${song}` : song;
+  document.getElementById('videoTitleText').textContent = '🎬 Suche Video…';
   currentVideoId = null;
 
-  for (const instance of INVIDIOUS_INSTANCES) {
+  // Instanzliste mischen damit nicht immer dieselbe zuerst versucht wird
+  const shuffled = [...INVIDIOUS_INSTANCES].sort(() => Math.random() - 0.5);
+
+  for (const instance of shuffled) {
     try {
-      const res = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query + ' official music video')}&type=video`, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(
+        `${instance}/api/v1/search?q=${encodeURIComponent(query + ' official music video')}&type=video&fields=videoId,title`,
+        { signal: AbortSignal.timeout(6000) }
+      );
       if (!res.ok) continue;
       const results = await res.json();
-      const first = Array.isArray(results) ? results.find(r => r.videoId) : null;
-      if (first) {
-        currentVideoId = first.videoId;
-        document.getElementById('videoTitleText').textContent = '🎬 ' + (artist ? `${artist} – ${song}` : song);
-        if (videoVisible) renderVideoFrame(currentVideoId);
-        else document.getElementById('videoFrameWrap').innerHTML = '<div class="video-empty">Video gefunden – klick auf "Anzeigen"</div>';
-        return;
+      if (!Array.isArray(results) || !results.length) continue;
+      const first = results.find(r => r.videoId);
+      if (!first) continue;
+
+      currentVideoId = first.videoId;
+      document.getElementById('videoTitleText').textContent = '🎬 ' + label;
+      if (videoVisible) {
+        renderVideoFrame(currentVideoId);
+      } else {
+        document.getElementById('videoFrameWrap').innerHTML =
+          '<div class="video-empty">▶ Video bereit – klick auf "Anzeigen"</div>';
       }
-    } catch (e) { /* nächste Instanz probieren */ }
+      return;
+    } catch (e) { /* Instanz nicht erreichbar, weiter */ }
   }
-  document.getElementById('videoTitleText').textContent = '🎬 Kein Video gefunden für: ' + (artist ? `${artist} – ${song}` : song);
-  document.getElementById('videoFrameWrap').innerHTML = '<div class="video-empty">Kein Video gefunden.</div>';
+
+  // Alle Invidious-Instanzen fehlgeschlagen – Fallback auf YouTube-Sucheinbettung
+  currentVideoId = '__search__';
+  document.getElementById('videoTitleText').textContent = '🎬 ' + label;
+  if (videoVisible) {
+    const wrap = document.getElementById('videoFrameWrap');
+    wrap.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(query + ' official music video')}&autoplay=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Musikvideo Suche"></iframe>`;
+  } else {
+    document.getElementById('videoFrameWrap').innerHTML =
+      '<div class="video-empty">▶ Video bereit – klick auf "Anzeigen"</div>';
+  }
 }
 
 // Sofort laden + alle 15 Sekunden aktualisieren

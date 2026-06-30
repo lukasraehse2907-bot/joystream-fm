@@ -1,26 +1,41 @@
 <?php
 // api.php — zentrales Backend für das Joystream FM Admin-Panel.
-// Speichert About-Texte, Social-Links, Partner und Kontaktdaten zentral in MySQL,
-// damit ALLE Besucher dieselben Inhalte sehen (nicht nur der Browser, in dem man eingeloggt war).
 
-header('Content-Type: application/json; charset=utf-8');
+// Output-Buffer starten: verhindert dass PHP-Warnungen/Fehler die JSON-Header kaputtmachen
+ob_start();
 
-// --- CORS: erlaube Anfragen von deiner Hauptdomain ---
+// Alle PHP-Fehler abfangen statt als HTML auszugeben
+set_error_handler(function($errno, $errstr) {
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'error' => 'PHP-Fehler: ' . $errstr]);
+    exit;
+});
+
+// --- CORS ZUERST – vor allem anderen ---
 $allowedOrigins = [
     'https://www.joystream-fm.de',
     'https://joystream-fm.de',
+    'https://panel.joystream-fm.de',
 ];
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (in_array($origin, $allowedOrigins, true)) {
     header('Access-Control-Allow-Origin: ' . $origin);
+} else {
+    header('Access-Control-Allow-Origin: *');
 }
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
+    ob_end_clean();
     exit;
 }
+
+header('Content-Type: application/json; charset=utf-8');
 
 require __DIR__ . '/db.php';
 
@@ -31,6 +46,7 @@ function input() {
 }
 
 function respond($arr) {
+    ob_clean();
     echo json_encode($arr);
     exit;
 }
@@ -226,3 +242,5 @@ switch ($action) {
         http_response_code(400);
         respond(['ok' => false, 'error' => 'Unbekannte Aktion']);
 }
+
+ob_end_flush();

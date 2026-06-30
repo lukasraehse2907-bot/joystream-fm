@@ -1,0 +1,27 @@
+# Joystream FM – CORS & Sicherheit
+
+# CORS für api.php erlauben
+<FilesMatch "api\.php$">
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</FilesMatch>
+
+# PHP-Fehler nicht im Browser anzeigen (verhindert kaputte JSON-Antworten)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Verzeichnis-Listing verbieten
+Options -Indexes
+
+# db.php vor direktem Zugriff schützen
+<Files "db.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# setup.php nach Nutzung sperren (auskommentieren solange du ihn noch brauchst)
+# <Files "setup.php">
+#     Order Allow,Deny
+#     Deny from all
+# </Files>
